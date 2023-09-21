@@ -51,7 +51,7 @@ namespace InjectHtml
 
         void UpdateAddressBar(object sender, CoreWebView2WebMessageReceivedEventArgs args)
         {
-            String uri = args.TryGetWebMessageAsString();
+            var uri = args.TryGetWebMessageAsString();
             _addressBar.Text = uri;
             _webView.CoreWebView2.PostWebMessageAsString(uri);
         }
@@ -145,7 +145,7 @@ namespace InjectHtml
 
         private async void EnsureHttps(object sender, CoreWebView2NavigationStartingEventArgs args)
         {
-            String uri = args.Uri;
+            var uri = args.Uri;
             if (!uri.StartsWith("https://"))
             {
                 await _webView.CoreWebView2.ExecuteScriptAsync($"alert('{uri} is not safe, try an https link')");
@@ -157,12 +157,18 @@ namespace InjectHtml
 
         private async void OnNavigationButtonClick(object sender, EventArgs e)
         {
-            _webView.NavigationStarting += EnsureHttps;
-            
             //check if the string can be converted to a valid uri, check on https will be done in EnsureHttps()
             if (Uri.TryCreate(_addressBar.Text, UriKind.Absolute, out var uriResult))
             {
-                _webView.Source = uriResult;
+                //if the _webView.Source & uriResult are equal, there will be no navigation
+                // => unsubscription from the NavigationStarting event is done in the eventhandler EnsureHttps()
+                // => risk of the event not being unsubscribed, so on every navigation eg NavigateToString() the EnsureHttps method would run
+                if(!_webView.Source.Equals(uriResult))
+                {
+                    _webView.NavigationStarting += EnsureHttps;
+                    _webView.Source = uriResult;
+                };
+         
             }
             else
             {
