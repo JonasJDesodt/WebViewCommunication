@@ -1,6 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Security.Policy;
+
+using System.IO;
+
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -48,14 +49,27 @@ namespace InjectHtml
             };
             Controls.Add(splitContainer);
 
+            //Panel on the left
+            var containerLeft = new Panel()
+            {
+                Dock = DockStyle.Fill
+            };
+
+            var uploadButton = new Button()
+            {
+                Text = "Upload HTML"
+            };
+            uploadButton.Click += OnUploadButtonClick;   
+            containerLeft.Controls.Add(uploadButton);
+
             //Panel on the right
-            var container = new Panel()
+            var containerRight = new Panel()
             {
                 Dock = DockStyle.Fill
             };
 
             _webView.Dock = DockStyle.Fill;
-            container.Controls.Add(_webView);
+            containerRight.Controls.Add(_webView);
 
             var navigation = new Panel()
             {
@@ -69,18 +83,33 @@ namespace InjectHtml
             var navigationButton = new Button()
             {
                 Dock = DockStyle.Right,
-                AutoSize = true,
                 Text = "Search"
             };
             navigationButton.Click += OnNavigationButtonClick;
             navigation.Controls.Add(navigationButton);
 
-            container.Controls.Add(navigation);
+            containerRight.Controls.Add(navigation);
 
-
-            splitContainer.Panel2.Controls.Add(container);
+            splitContainer.Panel1.Controls.Add(containerLeft);
+            splitContainer.Panel2.Controls.Add(containerRight);
 
             await InitializeWebView();
+        }
+
+        private void OnUploadButtonClick(object sender, EventArgs e)
+        {
+            var dialog = new OpenFileDialog();
+            dialog.Filter = "Text files | *.html"; // file types, that will be allowed to upload
+            dialog.Multiselect = false; // allow/deny user to upload more than one file at a time
+            if (dialog.ShowDialog() == DialogResult.OK) // if user clicked OK
+            {
+                var path = dialog.FileName; // get name of file
+          
+                //use using w/ streamreader?
+               var html =  File.ReadAllText(dialog.FileName);
+               _webView.NavigateToString(html);
+
+            }
         }
 
         private async void EnsureHttps(object sender, CoreWebView2NavigationStartingEventArgs args)
@@ -106,7 +135,6 @@ namespace InjectHtml
             else
             {
                 await _webView.CoreWebView2.ExecuteScriptAsync($"alert('{_navigationBar.Text} is not a valid url')");
-
             }
         }
 
