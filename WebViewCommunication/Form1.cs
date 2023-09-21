@@ -62,7 +62,18 @@ namespace WebViewCommunication
 
         private void OnNavigationButtonClick(object sender, EventArgs e)
         {
-            _webView.Source = new Uri(_navigationBar.Text);
+            var result = Uri.TryCreate(_navigationBar.Text, UriKind.Absolute, out var uriResult)
+                          && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+
+            if (result)
+            {
+                _webView.Source = uriResult;
+            }
+            else
+            {
+                MessageBox.Show("Error. Enter a valid url");
+            }
+  
         }
     }
 }
