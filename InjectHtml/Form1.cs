@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Security.Policy;
 using System.Windows.Forms;
+using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 
-namespace WebViewCommunication
+namespace InjectHtml
 {
     public partial class Form1 : Form
     {
@@ -13,9 +15,15 @@ namespace WebViewCommunication
         public Form1()
         {
             InitializeComponent();
+
             InitializeGui();
         }
 
+        public void InitializeWebView()
+        {
+            _webView.NavigationStarting += EnsureHttps;
+        }
+        
         public void InitializeGui()
         {
             var splitContainer = new SplitContainer
@@ -32,7 +40,7 @@ namespace WebViewCommunication
                 Dock = DockStyle.Fill
             };
 
-            _webView.Source = new Uri("https://learn.microsoft.com/en-us/microsoft-edge/webview2/get-started/winforms");
+            _webView.Source = new Uri("https://localhost:7205");
             _webView.Dock = DockStyle.Fill;
             container.Controls.Add(_webView);
 
@@ -53,27 +61,36 @@ namespace WebViewCommunication
             };
             navigationButton.Click += OnNavigationButtonClick;
             navigation.Controls.Add(navigationButton);
-            
+
             container.Controls.Add(navigation);
 
 
             splitContainer.Panel2.Controls.Add(container);
+
+            InitializeWebView();
+        }
+
+        void EnsureHttps(object sender, CoreWebView2NavigationStartingEventArgs args)
+        {
+            String uri = args.Uri;
+            if (!uri.StartsWith("https://"))
+            {
+                _webView.CoreWebView2.ExecuteScriptAsync($"alert('{uri} is not safe, try an https link')");
+                args.Cancel = true;
+            }
         }
 
         private void OnNavigationButtonClick(object sender, EventArgs e)
         {
-            var result = Uri.TryCreate(_navigationBar.Text, UriKind.Absolute, out var uriResult)
-                          && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
-
-            if (result)
+            if (Uri.TryCreate(_navigationBar.Text, UriKind.Absolute, out var uriResult))
             {
                 _webView.Source = uriResult;
             }
             else
             {
-                MessageBox.Show("Error. Enter a valid url");
+                _webView.CoreWebView2.ExecuteScriptAsync($"alert('{_navigationBar.Text} is not a valid url')");
+
             }
-  
         }
     }
 }
