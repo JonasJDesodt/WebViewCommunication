@@ -15,7 +15,7 @@ namespace InjectHtml
     {
         private readonly WebView2 _webView = new WebView2();
 
-        private readonly TextBox _navigationBar = new TextBox();
+        private readonly TextBox _addressBar = new TextBox();
 
         private string _html = GetStartupHtml(); 
 
@@ -38,11 +38,24 @@ namespace InjectHtml
             await _webView.EnsureCoreWebView2Async(null);
         }
 
-        private void OnWebViewCoreWebView2InitializationCompleted(object sender, CoreWebView2InitializationCompletedEventArgs e)
+        private async void OnWebViewCoreWebView2InitializationCompleted(object sender, CoreWebView2InitializationCompletedEventArgs e)
         {
             //_webView.NavigateToString(GetStartupHtml());
+
+            _webView.CoreWebView2.WebMessageReceived += UpdateAddressBar;
+
+            await _webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync("window.chrome.webview.postMessage(window.document.URL);");
+
             _webView.NavigateToString(_html);
         }
+
+        void UpdateAddressBar(object sender, CoreWebView2WebMessageReceivedEventArgs args)
+        {
+            String uri = args.TryGetWebMessageAsString();
+            _addressBar.Text = uri;
+            _webView.CoreWebView2.PostWebMessageAsString(uri);
+        }
+
 
         public async Task InitializeControls()
         {
@@ -90,8 +103,8 @@ namespace InjectHtml
             };
 
 
-            _navigationBar.Dock = DockStyle.Fill;
-            navigation.Controls.Add(_navigationBar);
+            _addressBar.Dock = DockStyle.Fill;
+            navigation.Controls.Add(_addressBar);
 
             var navigationButton = new Button()
             {
@@ -147,13 +160,13 @@ namespace InjectHtml
             _webView.NavigationStarting += EnsureHttps;
             
             //check if the string can be converted to a valid uri, check on https will be done in EnsureHttps()
-            if (Uri.TryCreate(_navigationBar.Text, UriKind.Absolute, out var uriResult))
+            if (Uri.TryCreate(_addressBar.Text, UriKind.Absolute, out var uriResult))
             {
                 _webView.Source = uriResult;
             }
             else
             {
-                await _webView.CoreWebView2.ExecuteScriptAsync($"alert('{_navigationBar.Text} is not a valid url')");
+                await _webView.CoreWebView2.ExecuteScriptAsync($"alert('{_addressBar.Text} is not a valid url')");
             }
         }
 
