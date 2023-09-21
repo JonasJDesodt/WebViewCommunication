@@ -18,7 +18,9 @@ namespace InjectHtml
 
         private readonly TextBox _addressBar = new TextBox();
 
-        private string _html = GetStartupHtml(); 
+        private string _html = GetStartupHtml();
+
+        private StringBuilder _script = new StringBuilder();
 
         public Form1()
         {
@@ -97,6 +99,14 @@ namespace InjectHtml
             injectInputFieldButton.Click += OnInjectInputFieldButtonClick;
             containerLeft.Controls.Add(injectInputFieldButton);
 
+            var injectJsScriptButton = new Button()
+            {
+                Text = "Inject Js Script",
+                Dock = DockStyle.Top
+            };
+            injectJsScriptButton.Click += OnInjectJsScriptButtonClick;
+            containerLeft.Controls.Add(injectJsScriptButton);
+
 
             //Panel on the right
             var containerRight = new Panel()
@@ -131,6 +141,15 @@ namespace InjectHtml
 
             await InitializeWebView();
         }
+
+  
+
+        private void OnInjectJsScriptButtonClick(object sender, EventArgs e)
+        {
+            AppendToScript();
+            InjectScriptInBody();
+        }
+
 
         private void OnInjectBootstrapLinkButtonClick(object sender, EventArgs e)
         {
@@ -233,6 +252,7 @@ namespace InjectHtml
 
                 _html = _html.Insert(headIndex + 6, bootstrapLink);
             }
+
             _webView.NavigateToString(_html);
 
             //var output = string.Join(";", Regex.Matches(_html, @"\<body\>(.+?)\<\/body\>")
@@ -280,9 +300,49 @@ namespace InjectHtml
 
                 _html = _html.Insert(headIndex + 6, input);
             }
+
             _webView.NavigateToString(_html);
         }
 
+        private void InjectScriptInBody()
+        {
+            var htmlIndex = _html.IndexOf("<html>", StringComparison.InvariantCulture);
+            if (string.IsNullOrEmpty(_html.Trim()) || htmlIndex < 0)
+            {
+                MessageBox.Show("Error. HTML element could not be found.");
+                return;
+            }
+            
+            //search for closing tag, scripts need to be placed at the end of the body
+            var bodyIndex = _html.IndexOf("</body>", StringComparison.InvariantCulture);
+            if (bodyIndex < 0)
+            {
+                MessageBox.Show("Error. Body element could not be found.");
+                return;
+            }
+
+
+            if (!_html.Contains("<script>"))
+            {
+                var script = "<script>" + _script + "</script>";
+                MessageBox.Show(script);
+                _html = _html.Insert(bodyIndex, script); //  -1 => insert right before closing tag
+            }
+            else
+            {
+                var headIndex = _html.IndexOf("<script>", StringComparison.InvariantCulture);
+
+                _html = _html.Insert(headIndex + 8, _script.ToString());
+            }
+
+            _webView.NavigateToString(_html);
+        }
+
+        private void AppendToScript()
+        {
+            _script.AppendLine(
+                "document.getElementById(\"id-input-1\").addEventListener(\"change\", event => window.chrome.webview.postMessage(event.target.value));");
+        }
 
     }
 }
