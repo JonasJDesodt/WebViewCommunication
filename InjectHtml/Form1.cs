@@ -1,12 +1,13 @@
 ﻿using System;
-
 using System.IO;
-
+using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
+using static System.Windows.Forms.LinkLabel;
 
 namespace InjectHtml
 {
@@ -15,6 +16,8 @@ namespace InjectHtml
         private readonly WebView2 _webView = new WebView2();
 
         private readonly TextBox _navigationBar = new TextBox();
+
+        private string _html = GetStartupHtml(); 
 
         public Form1()
         {
@@ -37,7 +40,10 @@ namespace InjectHtml
 
         private void OnWebViewCoreWebView2InitializationCompleted(object sender, CoreWebView2InitializationCompletedEventArgs e)
         {
-            _webView.NavigateToString(GetStartupHtml());
+            //_webView.NavigateToString(GetStartupHtml());
+            _webView.NavigateToString(_html);
+
+            InjectHtmlInHead();
         }
 
         public async Task InitializeControls()
@@ -103,12 +109,12 @@ namespace InjectHtml
             dialog.Multiselect = false; // allow/deny user to upload more than one file at a time
             if (dialog.ShowDialog() == DialogResult.OK) // if user clicked OK
             {
-                var path = dialog.FileName; // get name of file
-          
                 //use using w/ streamreader?
-               var html =  File.ReadAllText(dialog.FileName);
-               _webView.NavigateToString(html);
+                //var html =  File.ReadAllText(dialog.FileName);
+                //_webView.NavigateToString(html);
 
+                _html = File.ReadAllText(dialog.FileName);
+                _webView.NavigateToString(_html);
             }
         }
 
@@ -138,19 +144,49 @@ namespace InjectHtml
             }
         }
 
-        private string GetStartupHtml()
+        private static string GetStartupHtml()
         {
             var html = new StringBuilder();
 
             html.Append("<!DOCTYPE html>");
             html.Append("<html>");
             html.Append("<body>");
-            html.Append("<h1>My First Heading</h1>");
-            html.Append("<p>My first paragraph</p>");
+            html.Append("<h1>Startup page</h1>");
+            html.Append("<p>generated in WinForms</p>");
             html.Append("</body>");
             html.Append("</html>");
 
             return html.ToString();
+        }
+
+        private void InjectHtmlInHead()
+        {
+            var bootstrapLink =
+                "<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css\" integrity=\"sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T\" crossorigin=\"anonymous\" >";
+
+
+            //check if there is a head, if not create head
+            if (!_html.Contains("<head>") && !_html.Contains("</head>"))
+            {
+                var head = "<head>" + bootstrapLink + "</head>";
+                var index = _html.IndexOf("<body>", StringComparison.InvariantCulture) + 6;
+                if (index < 0) return;
+                _html = _html.Insert(index, head);
+            }
+            _webView.NavigateToString(_html);
+
+            //var output = string.Join(";", Regex.Matches(_html, @"\<body\>(.+?)\<\/body\>")
+            //    .Cast<Match>()
+            //    .Select(m => m.Groups[1].Value));
+
+            //var output = string.Join(";", Regex.Matches(_html, @"\<body\>(.+?)\<\/body\>"));
+
+
+            //var output = string.Join(";", Regex.Matches(_html, @"\<form\>(.+?)\<\/form\>")
+            //     .Cast<Match>());
+            //.Select(m => m.Groups[1].Value));
+
+
         }
     }
 }
