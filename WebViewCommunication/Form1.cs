@@ -8,6 +8,8 @@ namespace WebViewCommunication
     {
         private readonly WebView2 _webView = new WebView2();
 
+        private readonly TextBox _navigationBar = new TextBox();
+
         public Form1()
         {
             InitializeComponent();
@@ -22,7 +24,7 @@ namespace WebViewCommunication
                 Orientation = Orientation.Vertical
             };
             Controls.Add(splitContainer);
-            
+
 
             //Panel on the right
             var container = new Panel()
@@ -39,22 +41,28 @@ namespace WebViewCommunication
                 Dock = DockStyle.Top
             };
 
-                var navigationButton = new Button()
-                {
-                    Dock = DockStyle.Right
-                };
-                navigation.Controls.Add(navigationButton);
 
-                var navigationBar = new TextBox()
-                {
-                    Dock = DockStyle.Fill
-                };
-                navigation.Controls.Add(navigationBar);
+            _navigationBar.Dock = DockStyle.Fill;
+            navigation.Controls.Add(_navigationBar);
+
+            var navigationButton = new Button()
+            {
+                Dock = DockStyle.Right,
+                AutoSize = true,
+                Text = "Search"
+            };
+            navigationButton.Click += OnNavigationButtonClick;
+            navigation.Controls.Add(navigationButton);
             
             container.Controls.Add(navigation);
+
 
             splitContainer.Panel2.Controls.Add(container);
         }
 
+        private void OnNavigationButtonClick(object sender, EventArgs e)
+        {
+            _webView.Source = new Uri(_navigationBar.Text);
+        }
     }
 }
