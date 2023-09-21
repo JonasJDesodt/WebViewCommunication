@@ -25,7 +25,6 @@ namespace InjectHtml
         public async Task InitializeWebView()
         {
             _webView.CoreWebView2InitializationCompleted += OnWebViewCoreWebView2InitializationCompleted;
-            //_webView.NavigationStarting += EnsureHttps;
 
             await _webView.EnsureCoreWebView2Async(null);
         }
@@ -87,10 +86,14 @@ namespace InjectHtml
                 _webView.CoreWebView2.ExecuteScriptAsync($"alert('{uri} is not safe, try an https link')");
                 args.Cancel = true;
             }
+
+            _webView.NavigationStarting -= EnsureHttps;
         }
 
         private void OnNavigationButtonClick(object sender, EventArgs e)
         {
+            _webView.NavigationStarting += EnsureHttps;
+            
             if (Uri.TryCreate(_navigationBar.Text, UriKind.Absolute, out var uriResult))
             {
                 _webView.Source = uriResult;
