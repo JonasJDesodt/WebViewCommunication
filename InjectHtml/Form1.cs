@@ -22,6 +22,11 @@ namespace InjectHtml
             InitializeGui();
         }
 
+        public async void InitializeGui()
+        {
+            await InitializeControls();
+        }
+
         public async Task InitializeWebView()
         {
             _webView.CoreWebView2InitializationCompleted += OnWebViewCoreWebView2InitializationCompleted;
@@ -34,7 +39,7 @@ namespace InjectHtml
             _webView.NavigateToString(GetStartupHtml());
         }
 
-        public async Task InitializeGui()
+        public async Task InitializeControls()
         {
             var splitContainer = new SplitContainer
             {
@@ -78,19 +83,19 @@ namespace InjectHtml
             await InitializeWebView();
         }
 
-        void EnsureHttps(object sender, CoreWebView2NavigationStartingEventArgs args)
+        private async void EnsureHttps(object sender, CoreWebView2NavigationStartingEventArgs args)
         {
             String uri = args.Uri;
             if (!uri.StartsWith("https://"))
             {
-                _webView.CoreWebView2.ExecuteScriptAsync($"alert('{uri} is not safe, try an https link')");
+                await _webView.CoreWebView2.ExecuteScriptAsync($"alert('{uri} is not safe, try an https link')");
                 args.Cancel = true;
             }
 
             _webView.NavigationStarting -= EnsureHttps;
         }
 
-        private void OnNavigationButtonClick(object sender, EventArgs e)
+        private async void OnNavigationButtonClick(object sender, EventArgs e)
         {
             _webView.NavigationStarting += EnsureHttps;
             
@@ -100,7 +105,7 @@ namespace InjectHtml
             }
             else
             {
-                _webView.CoreWebView2.ExecuteScriptAsync($"alert('{_navigationBar.Text} is not a valid url')");
+                await _webView.CoreWebView2.ExecuteScriptAsync($"alert('{_navigationBar.Text} is not a valid url')");
 
             }
         }
