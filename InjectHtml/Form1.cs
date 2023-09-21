@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing.Text;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -53,7 +54,7 @@ namespace InjectHtml
         {
             var uri = args.TryGetWebMessageAsString();
             _addressBar.Text = uri;
-            _webView.CoreWebView2.PostWebMessageAsString(uri);
+            //_webView.CoreWebView2.PostWebMessageAsString(uri);
         }
 
 
@@ -80,13 +81,22 @@ namespace InjectHtml
             uploadButton.Click += OnUploadButtonClick;   
             containerLeft.Controls.Add(uploadButton);
 
-            var injectButton = new Button()
+            var injectBootstrapLinkButton = new Button()
             {
                 Text = "Inject Bootstraplink",
                 Dock = DockStyle.Top
             };
-            injectButton.Click += OnInjectButtonClick;
-            containerLeft.Controls.Add(injectButton);
+            injectBootstrapLinkButton.Click += OnInjectBootstrapLinkButtonClick;
+            containerLeft.Controls.Add(injectBootstrapLinkButton);
+
+            var injectInputFieldButton = new Button()
+            {
+                Text = "Inject InputField",
+                Dock = DockStyle.Top
+            };
+            injectInputFieldButton.Click += OnInjectInputFieldButtonClick;
+            containerLeft.Controls.Add(injectInputFieldButton);
+
 
             //Panel on the right
             var containerRight = new Panel()
@@ -122,9 +132,14 @@ namespace InjectHtml
             await InitializeWebView();
         }
 
-        private void OnInjectButtonClick(object sender, EventArgs e)
+        private void OnInjectBootstrapLinkButtonClick(object sender, EventArgs e)
         {
-            InjectHtmlInHead();
+            InjectBootstrapLinkInHead();
+        }
+
+        private void OnInjectInputFieldButtonClick(object sender, EventArgs e)
+        {
+            InjectInputFieldInBody();
         }
 
         private void OnUploadButtonClick(object sender, EventArgs e)
@@ -193,7 +208,7 @@ namespace InjectHtml
             return html.ToString();
         }
 
-        private void InjectHtmlInHead()
+        private void InjectBootstrapLinkInHead()
         {
             //check if there is html in the string
             var htmlIndex = _html.IndexOf("<html>", StringComparison.InvariantCulture);
@@ -205,7 +220,7 @@ namespace InjectHtml
 
             var bootstrapLink = "<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css\" integrity=\"sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T\" crossorigin=\"anonymous\" >";
             
-            //check if there is a head, if not create head
+            //check if there is a head, if not: create head
             if (!_html.Contains("<head>"))
             {
                 var head = "<head>" + bootstrapLink + "</head>";
@@ -240,5 +255,34 @@ namespace InjectHtml
             //}
 
         }
+
+        private void InjectInputFieldInBody()
+        {
+            var htmlIndex = _html.IndexOf("<html>", StringComparison.InvariantCulture);
+            if (string.IsNullOrEmpty(_html.Trim()) || htmlIndex < 0)
+            {
+                MessageBox.Show("Error. HTML element could not be found.");
+                return;
+            }
+
+            var input = "<input id=\"id-input-1\" type=\"Text\" name=\"name-input-1\"/>";   
+
+            //check if there is a head, if not: create head
+            if (!_html.Contains("<body>"))
+            {
+                var head = "<body>" + input + "</body>";
+
+                _html = _html.Insert(htmlIndex + 6, head); // <head> == 6 characters
+            }
+            else
+            {
+                var headIndex = _html.IndexOf("<body>", StringComparison.InvariantCulture);
+
+                _html = _html.Insert(headIndex + 6, input);
+            }
+            _webView.NavigateToString(_html);
+        }
+
+
     }
 }
