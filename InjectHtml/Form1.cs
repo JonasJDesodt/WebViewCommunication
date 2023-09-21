@@ -42,8 +42,6 @@ namespace InjectHtml
         {
             //_webView.NavigateToString(GetStartupHtml());
             _webView.NavigateToString(_html);
-
-            InjectHtmlInHead();
         }
 
         public async Task InitializeControls()
@@ -63,10 +61,19 @@ namespace InjectHtml
 
             var uploadButton = new Button()
             {
-                Text = "Upload HTML"
+                Text = "Upload HTML",
+                Dock = DockStyle.Top
             };
             uploadButton.Click += OnUploadButtonClick;   
             containerLeft.Controls.Add(uploadButton);
+
+            var injectButton = new Button()
+            {
+                Text = "Inject Bootstraplink",
+                Dock = DockStyle.Top
+            };
+            injectButton.Click += OnInjectButtonClick;
+            containerLeft.Controls.Add(injectButton);
 
             //Panel on the right
             var containerRight = new Panel()
@@ -102,6 +109,11 @@ namespace InjectHtml
             await InitializeWebView();
         }
 
+        private void OnInjectButtonClick(object sender, EventArgs e)
+        {
+            InjectHtmlInHead();
+        }
+
         private void OnUploadButtonClick(object sender, EventArgs e)
         {
             var dialog = new OpenFileDialog();
@@ -134,6 +146,7 @@ namespace InjectHtml
         {
             _webView.NavigationStarting += EnsureHttps;
             
+            //check if the string can be converted to a valid uri, check on https will be done in EnsureHttps()
             if (Uri.TryCreate(_navigationBar.Text, UriKind.Absolute, out var uriResult))
             {
                 _webView.Source = uriResult;
@@ -150,10 +163,8 @@ namespace InjectHtml
 
             html.Append("<!DOCTYPE html>");
             html.Append("<html>");
-
             html.Append("<head>");
             html.Append("</head>");
-
             html.Append("<body>");
             html.Append("<h1>Startup page</h1>");
             html.Append("<p>generated in WinForms</p>");
@@ -165,8 +176,8 @@ namespace InjectHtml
 
         private void InjectHtmlInHead()
         {
+            //check if there is html in the string
             var htmlIndex = _html.IndexOf("<html>", StringComparison.InvariantCulture);
-
             if (string.IsNullOrEmpty(_html.Trim()) || htmlIndex < 0)
             {
                 MessageBox.Show("Error. HTML element could not be found.");
@@ -180,11 +191,12 @@ namespace InjectHtml
             {
                 var head = "<head>" + bootstrapLink + "</head>";
 
-                _html = _html.Insert(htmlIndex + 6, head);
+                _html = _html.Insert(htmlIndex + 6, head); // <head> == 6 characters
             }
             else
             {
                 var headIndex = _html.IndexOf("<head>", StringComparison.InvariantCulture);
+
                 _html = _html.Insert(headIndex + 6, bootstrapLink);
             }
             _webView.NavigateToString(_html);
