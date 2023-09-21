@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Security.Policy;
+using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
@@ -19,12 +22,20 @@ namespace InjectHtml
             InitializeGui();
         }
 
-        public void InitializeWebView()
+        public async Task InitializeWebView()
         {
-            _webView.NavigationStarting += EnsureHttps;
+            _webView.CoreWebView2InitializationCompleted += OnWebViewCoreWebView2InitializationCompleted;
+            //_webView.NavigationStarting += EnsureHttps;
+
+            await _webView.EnsureCoreWebView2Async(null);
         }
-        
-        public void InitializeGui()
+
+        private void OnWebViewCoreWebView2InitializationCompleted(object sender, CoreWebView2InitializationCompletedEventArgs e)
+        {
+            _webView.NavigateToString(GetStartupHtml());
+        }
+
+        public async Task InitializeGui()
         {
             var splitContainer = new SplitContainer
             {
@@ -33,14 +44,12 @@ namespace InjectHtml
             };
             Controls.Add(splitContainer);
 
-
             //Panel on the right
             var container = new Panel()
             {
                 Dock = DockStyle.Fill
             };
 
-            _webView.Source = new Uri("https://localhost:7205");
             _webView.Dock = DockStyle.Fill;
             container.Controls.Add(_webView);
 
@@ -67,7 +76,7 @@ namespace InjectHtml
 
             splitContainer.Panel2.Controls.Add(container);
 
-            InitializeWebView();
+            await InitializeWebView();
         }
 
         void EnsureHttps(object sender, CoreWebView2NavigationStartingEventArgs args)
@@ -91,6 +100,21 @@ namespace InjectHtml
                 _webView.CoreWebView2.ExecuteScriptAsync($"alert('{_navigationBar.Text} is not a valid url')");
 
             }
+        }
+
+        private string GetStartupHtml()
+        {
+            var html = new StringBuilder();
+
+            html.Append("<!DOCTYPE html>");
+            html.Append("<html>");
+            html.Append("<body>");
+            html.Append("<h1>My First Heading</h1>");
+            html.Append("<p>My first paragraph</p>");
+            html.Append("</body>");
+            html.Append("</html>");
+
+            return html.ToString();
         }
     }
 }
