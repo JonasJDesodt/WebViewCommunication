@@ -150,6 +150,10 @@ namespace InjectHtml
 
             html.Append("<!DOCTYPE html>");
             html.Append("<html>");
+
+            html.Append("<head>");
+            html.Append("</head>");
+
             html.Append("<body>");
             html.Append("<h1>Startup page</h1>");
             html.Append("<p>generated in WinForms</p>");
@@ -161,17 +165,27 @@ namespace InjectHtml
 
         private void InjectHtmlInHead()
         {
-            var bootstrapLink =
-                "<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css\" integrity=\"sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T\" crossorigin=\"anonymous\" >";
+            var htmlIndex = _html.IndexOf("<html>", StringComparison.InvariantCulture);
 
+            if (string.IsNullOrEmpty(_html.Trim()) || htmlIndex < 0)
+            {
+                MessageBox.Show("Error. HTML element could not be found.");
+                return;
+            }
 
+            var bootstrapLink = "<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css\" integrity=\"sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T\" crossorigin=\"anonymous\" >";
+            
             //check if there is a head, if not create head
-            if (!_html.Contains("<head>") && !_html.Contains("</head>"))
+            if (!_html.Contains("<head>"))
             {
                 var head = "<head>" + bootstrapLink + "</head>";
-                var index = _html.IndexOf("<body>", StringComparison.InvariantCulture) + 6;
-                if (index < 0) return;
-                _html = _html.Insert(index, head);
+
+                _html = _html.Insert(htmlIndex + 6, head);
+            }
+            else
+            {
+                var headIndex = _html.IndexOf("<head>", StringComparison.InvariantCulture);
+                _html = _html.Insert(headIndex + 6, bootstrapLink);
             }
             _webView.NavigateToString(_html);
 
@@ -186,6 +200,13 @@ namespace InjectHtml
             //     .Cast<Match>());
             //.Select(m => m.Groups[1].Value));
 
+
+            //var index = _html.IndexOf("<body>", StringComparison.InvariantCulture);
+            //if (index < 0)
+            //{
+            //    MessageBox.Show("Error. Body element could not be found.");
+            //    return;
+            //}
 
         }
     }
