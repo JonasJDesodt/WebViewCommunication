@@ -5,11 +5,15 @@ using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net.Mime;
+using System.Reflection;
 using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Xml.Linq;
 using Microsoft.Web.WebView2.Core;
+using Microsoft.Web.WebView2.Core.Raw;
 using Microsoft.Web.WebView2.WinForms;
 
 namespace Demo
@@ -25,6 +29,8 @@ namespace Demo
         private readonly StringBuilder _script = new StringBuilder();
 
         private readonly BridgeAnotherClass _bridge = new BridgeAnotherClass() { Prop = "Hello world!" };
+
+        private readonly Panel _addDivContainer = new Panel();
 
 
         public Form1()
@@ -111,10 +117,33 @@ namespace Demo
             devToolsButton.Click += OnDevToolsButtonClick;
             containerLeft.Controls.Add(devToolsButton);
 
+
+            _addDivContainer.Dock = DockStyle.Top;
+            var textBoxX = new TextBox()
+            {
+                Dock = DockStyle.Top,
+                Name = "X"
+            }; 
+            _addDivContainer.Controls.Add(textBoxX);
+            var textBoxY = new TextBox()
+            {
+                Dock = DockStyle.Top,
+                Name = "Y"
+            }; 
+            _addDivContainer.Controls.Add(textBoxY);
+            var addDivButton = new Button()
+            {
+                Text = "Add Div",
+                Dock = DockStyle.Top
+            };
+            addDivButton.Click += OnAddDivButtonClick;
+            _addDivContainer.Controls.Add(addDivButton);
+            containerLeft.Controls.Add(_addDivContainer);
+
             //Panel on the right
             var containerRight = new Panel()
             {
-                Dock = DockStyle.Fill
+                Dock = DockStyle.Fill,
             };
 
             _webView.Dock = DockStyle.Fill;
@@ -163,7 +192,9 @@ namespace Demo
         {
             _webView.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
 
-            await _webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync("window.chrome.webview.postMessage(window.document.URL);");
+            //await _webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync("window.chrome.webview.postMessage(window.document.URL);");
+
+            await _webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(GetStartupScript());
 
             _webView.NavigateToString(_html);
 
@@ -235,6 +266,8 @@ namespace Demo
 
             _webView.NavigateToString(_html);
         }
+
+
 
         private void OnInjectFileInputButtonClick(object sender, EventArgs e)
         {
@@ -340,6 +373,22 @@ namespace Demo
             _webView.CoreWebView2.OpenDevToolsWindow();
         }
 
+        private async void OnAddDivButtonClick(object sender, EventArgs e)
+        {
+            var x = _addDivContainer.Controls.Find("X", true)[0] as TextBox;
+            var y = _addDivContainer.Controls.Find("Y", true)[0] as TextBox;
+
+            if (x != null && y != null)
+            {
+                await _webView.CoreWebView2.ExecuteScriptAsync($"AddDiv({x.Text}, {y.Text})");
+            }
+            else
+            {
+                MessageBox.Show("Give coordinates");
+            }
+
+        }
+
         private async void EnsureHttps(object sender, CoreWebView2NavigationStartingEventArgs args)
         {
             var uri = args.Uri;
@@ -394,5 +443,20 @@ namespace Demo
 
             return html.ToString();
         }
+
+        private string GetStartupScript()
+        {
+            var builder = new StringBuilder();
+
+            builder.Append("window.chrome.webview.postMessage(window.document.URL);");
+
+            //builder.Append("document.getElementsByTagName('script')[0].text += await chrome.webview.hostObjects.bridge.GetAddDivFunction();");
+
+            return builder.ToString();
+        }
     }
 }
+
+
+//const div = document.getElementById("div");
+//div.insertAdjacentHTML('beforeend', 'stuff'); ;

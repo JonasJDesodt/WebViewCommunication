@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Demo
 {
@@ -21,6 +22,13 @@ namespace Demo
         public void InvokeFireEvent()
         {
             Fire?.Invoke(this, EventArgs.Empty);
+        }
+
+        public string GetAddDivFunction()
+        {
+            //return "function AddDiv(x, y){const div = document.createElement('div'); div.style.position = 'absolute'; div.style.left = x + 'px'; div.style.top = y + 'px'; div.style.width = '250px'; div.style.height = '250px'; div.style.background = 'red'; document.getElementsByTagName('body')[0].appendChild(div); console.log('flag')};";
+            return "function AddDiv(x, y) {console.log('flag');}";
+
         }
     }
 
