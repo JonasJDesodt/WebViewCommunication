@@ -24,6 +24,8 @@ namespace Demo
 
         private readonly StringBuilder _script = new StringBuilder();
 
+        private readonly BridgeAnotherClass _bridge = new BridgeAnotherClass() { Prop = "Hello world!" };
+
 
         public Form1()
         {
@@ -93,6 +95,21 @@ namespace Demo
             helloWorldButton.Click += OnHelloWorldButtonClick;
             containerLeft.Controls.Add(helloWorldButton);
 
+            var testHostObjectButton = new Button()
+            {
+                Text = "Test Host Object",
+                Dock = DockStyle.Top
+            };
+            testHostObjectButton.Click += OnTestHostObjectButtonClick;
+            containerLeft.Controls.Add(testHostObjectButton);
+
+            var devToolsButton = new Button()
+            {
+                Text = "Dev tools",
+                Dock = DockStyle.Top
+            };
+            devToolsButton.Click += OnDevToolsButtonClick;
+            containerLeft.Controls.Add(devToolsButton);
 
             //Panel on the right
             var containerRight = new Panel()
@@ -130,6 +147,9 @@ namespace Demo
 
         public async Task InitializeWebView()
         {
+            //?? CoreWebView2.DOMContentLoaded ??
+
+
             //the coreWebView2 needs to be completely loaded before interaction is possible
             _webView.CoreWebView2InitializationCompleted += OnWebViewCoreWebView2InitializationCompleted;
 
@@ -146,6 +166,10 @@ namespace Demo
             await _webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync("window.chrome.webview.postMessage(window.document.URL);");
 
             _webView.NavigateToString(_html);
+
+
+            
+            _webView.CoreWebView2.AddHostObjectToScript("bridge", _bridge);
         }
 
         private void OnWebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs args)
@@ -303,6 +327,18 @@ namespace Demo
         private async void OnHelloWorldButtonClick(object sender, EventArgs e)
         {
             await _webView.ExecuteScriptAsync("alert(\'Hello World!\')");
+        }
+
+        private async void OnTestHostObjectButtonClick(object sender, EventArgs e)
+        {
+            MessageBox.Show(_bridge.Prop);
+            _bridge.InvokeFireEvent();
+
+        }
+
+        private void OnDevToolsButtonClick(object sender, EventArgs e)
+        {
+            _webView.CoreWebView2.OpenDevToolsWindow();
         }
 
         private async void EnsureHttps(object sender, CoreWebView2NavigationStartingEventArgs args)
