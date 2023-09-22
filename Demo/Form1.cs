@@ -333,7 +333,6 @@ namespace Demo
         {
             MessageBox.Show(_bridge.Prop);
             _bridge.InvokeFireEvent();
-
         }
 
         private void OnDevToolsButtonClick(object sender, EventArgs e)
