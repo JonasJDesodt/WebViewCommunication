@@ -6,9 +6,14 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Xml.Linq;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 using static System.Windows.Forms.LinkLabel;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
+
+//https://learn.microsoft.com/en-us/dotnet/api/microsoft.web.webview2.core.corewebview2.postwebmessageasjson?view=webview2-dotnet-1.0.1938.49
+//https://learn.microsoft.com/en-us/microsoft-edge/webview2/reference/javascript/webview
 
 namespace InjectHtml
 {
@@ -52,9 +57,19 @@ namespace InjectHtml
             _webView.NavigateToString(_html);
         }
 
+        //https://learn.microsoft.com/en-us/dotnet/api/microsoft.web.webview2.core.corewebview2webmessagereceivedeventargs.additionalobjects?view=webview2-dotnet-1.0.1938.49
         void UpdateAddressBar(object sender, CoreWebView2WebMessageReceivedEventArgs args)
         {
             var uri = args.TryGetWebMessageAsString();
+
+            if (args.AdditionalObjects != null)
+            {
+
+                var objects = args.AdditionalObjects;
+
+                var html = File.ReadAllText((objects[0] as CoreWebView2File).Path);
+            }
+            
             _addressBar.Text = uri;
             //_webView.CoreWebView2.PostWebMessageAsString(uri);
         }
@@ -91,13 +106,13 @@ namespace InjectHtml
             injectBootstrapLinkButton.Click += OnInjectBootstrapLinkButtonClick;
             containerLeft.Controls.Add(injectBootstrapLinkButton);
 
-            var injectInputFieldButton = new Button()
+            var injectFileInputButton = new Button()
             {
-                Text = "Inject InputField",
+                Text = "Inject File input",
                 Dock = DockStyle.Top
             };
-            injectInputFieldButton.Click += OnInjectInputFieldButtonClick;
-            containerLeft.Controls.Add(injectInputFieldButton);
+            injectFileInputButton.Click += OnInjectFileInputButtonClick;
+            containerLeft.Controls.Add(injectFileInputButton);
 
             var injectJsScriptButton = new Button()
             {
@@ -146,7 +161,7 @@ namespace InjectHtml
 
         private void OnInjectJsScriptButtonClick(object sender, EventArgs e)
         {
-            AppendToScript();
+            //AppendEventListenerToScript();
             InjectScriptInBody();
         }
 
@@ -156,9 +171,14 @@ namespace InjectHtml
             InjectBootstrapLinkInHead();
         }
 
-        private void OnInjectInputFieldButtonClick(object sender, EventArgs e)
+        private void OnInjectFileInputButtonClick(object sender, EventArgs e)
         {
-            InjectInputFieldInBody();
+            var id = InjectInputFieldInBody("file");
+            if (id is null)
+            {
+                MessageBox.Show("Input could not be injected");
+                return;
+            }
         }
 
         private void OnUploadButtonClick(object sender, EventArgs e)
@@ -276,16 +296,18 @@ namespace InjectHtml
 
         }
 
-        private void InjectInputFieldInBody()
+        private Guid? InjectInputFieldInBody(string type)
         {
+            var id = Guid.NewGuid();
+
             var htmlIndex = _html.IndexOf("<html>", StringComparison.InvariantCulture);
             if (string.IsNullOrEmpty(_html.Trim()) || htmlIndex < 0)
             {
                 MessageBox.Show("Error. HTML element could not be found.");
-                return;
+                return null;
             }
 
-            var input = "<input id=\"id-input-1\" type=\"Text\" name=\"name-input-1\"/>";   
+            var input = $"<input id=\"{id}\" type=\"{type}\" name=\"name-input-1\"/>";   
 
             //check if there is a head, if not: create head
             if (!_html.Contains("<body>"))
@@ -302,6 +324,10 @@ namespace InjectHtml
             }
 
             _webView.NavigateToString(_html);
+
+            AppendEventListenerToScript(id, "change");
+
+            return id;
         }
 
         private void InjectScriptInBody()
@@ -325,7 +351,7 @@ namespace InjectHtml
             if (!_html.Contains("<script>"))
             {
                 var script = "<script>" + _script + "</script>";
-                MessageBox.Show(script);
+
                 _html = _html.Insert(bodyIndex, script); //  -1 => insert right before closing tag
             }
             else
@@ -338,10 +364,22 @@ namespace InjectHtml
             _webView.NavigateToString(_html);
         }
 
-        private void AppendToScript()
+        private void AppendEventListenerToScript(Guid id, string action)
         {
-            _script.AppendLine(
-                "document.getElementById(\"id-input-1\").addEventListener(\"change\", event => window.chrome.webview.postMessage(event.target.value));");
+            //_script.AppendLine(
+            //    "document.getElementById(\"id-input-1\").addEventListener(\"change\", event => window.chrome.webview.postMessage(event.target.value));");
+
+            _script.AppendLine($"const input = document.getElementById(\"{id}\");");
+
+            //_script.AppendLine("input.addEventListener(\"change\", event => window.chrome.webview.postMessageWithAdditionalObjects(event.target.id, [{value: input.target.value}]));");
+            _script.AppendLine($"input.addEventListener(\"{action}\", event => window.chrome.webview.postMessageWithAdditionalObjects(event.target.id, input.files));");
+            //_script.AppendLine("input.addEventListener(\"change\", function(event) {const args = {\"values\": [{\"input\": input.value}]}; console.log(args); window.chrome.webview.postMessageWithAdditionalObjects(event.target.id, args); });");
+
+
+            // ?? => https://learn.microsoft.com/en-us/microsoft-edge/webview2/reference/javascript/webview#webview2script-webview-postmessagewithadditionalobjects-member(1)
+            // Call with the ArrayBuffer from the chrome.webview.sharedbufferreceived event to release the underlying shared memory resource.
+
+
         }
 
     }
