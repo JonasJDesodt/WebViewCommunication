@@ -22,7 +22,7 @@ namespace Demo
 
         private string _html = GetStartupHtml();
 
-        private StringBuilder _script = new StringBuilder();
+        private readonly StringBuilder _script = new StringBuilder();
 
 
         public Form1()
@@ -84,6 +84,14 @@ namespace Demo
             };
             injectJsScriptButton.Click += OnInjectJsScriptButtonClick;
             containerLeft.Controls.Add(injectJsScriptButton);
+
+            var helloWorldButton = new Button()
+            {
+                Text = "Hello World",
+                Dock = DockStyle.Top
+            };
+            helloWorldButton.Click += OnHelloWorldButtonClick;
+            containerLeft.Controls.Add(helloWorldButton);
 
 
             //Panel on the right
@@ -292,6 +300,11 @@ namespace Demo
             }
         }
 
+        private async void OnHelloWorldButtonClick(object sender, EventArgs e)
+        {
+            await _webView.ExecuteScriptAsync("alert(\'Hello World!\')");
+        }
+
         private async void EnsureHttps(object sender, CoreWebView2NavigationStartingEventArgs args)
         {
             var uri = args.Uri;
@@ -327,14 +340,9 @@ namespace Demo
 
         private void AppendEventListenerToScript(Guid id, string action)
         {
-            _script.AppendLine($"const input = document.getElementById(\"{id}\");");
-            _script.AppendLine($"input.addEventListener(\"{action}\", event => window.chrome.webview.postMessageWithAdditionalObjects(\"files\", input.files));");
+            _script.AppendLine($"document.getElementById(\"{id}\").addEventListener(\"{action}\", event => window.chrome.webview.postMessageWithAdditionalObjects(\"files\", event.target.files));");
         }
-
-
-
-
-        //HELPERS
+        
         private static string GetStartupHtml()
         {
             var html = new StringBuilder();

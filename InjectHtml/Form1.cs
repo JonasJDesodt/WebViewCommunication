@@ -25,7 +25,7 @@ namespace InjectHtml
 
         private string _html = GetStartupHtml();
 
-        private StringBuilder _script = new StringBuilder();
+        private readonly StringBuilder _script = new StringBuilder();
 
         public Form1()
         {
@@ -56,6 +56,8 @@ namespace InjectHtml
             await _webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync("window.chrome.webview.postMessage(window.document.URL);");
 
             _webView.NavigateToString(_html);
+
+            await _webView.ExecuteScriptAsync("alert(\'Hello World!\')");
         }
 
         private void OnWebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs args)
