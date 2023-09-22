@@ -50,15 +50,50 @@ namespace InjectHtml
         {
             //_webView.NavigateToString(GetStartupHtml());
 
-            _webView.CoreWebView2.WebMessageReceived += UpdateAddressBar;
+            //_webView.CoreWebView2.WebMessageReceived += UpdateAddressBar;
+            _webView.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
 
             await _webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync("window.chrome.webview.postMessage(window.document.URL);");
 
             _webView.NavigateToString(_html);
         }
 
+        private void OnWebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs args)
+        {
+            var message = args.TryGetWebMessageAsString();
+
+            switch (message)
+            {
+                case "files":
+                    GetAndLoadHtmlPageFromCoreWebView2FilePath(args);
+                    break;
+                default:
+                    UpdateAddressBar(message);
+                    break;
+            }
+            
+        }
+
+
+        private void UpdateAddressBar(string uri)
+        {
+            _addressBar.Text = uri;
+        }
+
+        private void GetAndLoadHtmlPageFromCoreWebView2FilePath(CoreWebView2WebMessageReceivedEventArgs args)
+        {
+            if (args.AdditionalObjects != null)
+            {
+                var objects = args.AdditionalObjects;
+
+                _html = File.ReadAllText((objects[0] as CoreWebView2File).Path);
+                _webView.NavigateToString(_html);
+            }
+
+        }
+
         //https://learn.microsoft.com/en-us/dotnet/api/microsoft.web.webview2.core.corewebview2webmessagereceivedeventargs.additionalobjects?view=webview2-dotnet-1.0.1938.49
-        void UpdateAddressBar(object sender, CoreWebView2WebMessageReceivedEventArgs args)
+        private void UpdateAddressBar(object sender, CoreWebView2WebMessageReceivedEventArgs args)
         {
             var uri = args.TryGetWebMessageAsString();
 
@@ -68,6 +103,7 @@ namespace InjectHtml
                 var objects = args.AdditionalObjects;
 
                 var html = File.ReadAllText((objects[0] as CoreWebView2File).Path);
+                _webView.NavigateToString(_html);
             }
             
             _addressBar.Text = uri;
@@ -222,7 +258,6 @@ namespace InjectHtml
                     _webView.NavigationStarting += EnsureHttps;
                     _webView.Source = uriResult;
                 };
-         
             }
             else
             {
@@ -372,7 +407,7 @@ namespace InjectHtml
             _script.AppendLine($"const input = document.getElementById(\"{id}\");");
 
             //_script.AppendLine("input.addEventListener(\"change\", event => window.chrome.webview.postMessageWithAdditionalObjects(event.target.id, [{value: input.target.value}]));");
-            _script.AppendLine($"input.addEventListener(\"{action}\", event => window.chrome.webview.postMessageWithAdditionalObjects(event.target.id, input.files));");
+            _script.AppendLine($"input.addEventListener(\"{action}\", event => window.chrome.webview.postMessageWithAdditionalObjects(\"files\", input.files));");
             //_script.AppendLine("input.addEventListener(\"change\", function(event) {const args = {\"values\": [{\"input\": input.value}]}; console.log(args); window.chrome.webview.postMessageWithAdditionalObjects(event.target.id, args); });");
 
 
