@@ -53,6 +53,7 @@ namespace WebViewCommunication
             };
             Controls.Add(splitContainer);
 
+            #region
             //Panel on the left
             var containerLeft = new Panel()
             {
@@ -181,8 +182,8 @@ namespace WebViewCommunication
             };
             uploadButton.Click += OnUploadButtonClick;
             containerLeft.Controls.Add(uploadButton);
-
-
+            #endregion
+            
             //Panel on the right
             var containerRight = new Panel()
             {
@@ -218,9 +219,6 @@ namespace WebViewCommunication
 
         public async Task InitializeWebView()
         {
-            //?? CoreWebView2.DOMContentLoaded ??
-
-
             //the coreWebView2 needs to be completely loaded before interaction is possible
             _webView.CoreWebView2InitializationCompleted += OnWebViewCoreWebView2InitializationCompleted;
 
@@ -354,27 +352,7 @@ namespace WebViewCommunication
 
         private async void OnInjectScriptAppenderClick(object sender, EventArgs e)
         {
-            var scriptBuilder = new StringBuilder();
-
-            scriptBuilder.Append("const script = document.createElement('script');");
-            scriptBuilder.Append("script.type = 'text/javascript';");
-
-            var contentBuilder = new StringBuilder();
-            //contentBuilder.Append("const bridge = chrome.webview.hostObjects.bridge;");
-            contentBuilder.Append("async function addScript(func){"); // adds the function to add scripts
-            contentBuilder.Append("console.log(func);");
-            contentBuilder.Append("const script = document.createElement(\"script\");");
-            //contentBuilder.Append("script.innerHTML = await bridge[func];");
-            contentBuilder.Append("script.innerHTML = func;");
-
-            contentBuilder.Append("document.getElementsByTagName(\"body\")[0].appendChild(script);");
-            contentBuilder.Append("};");
-
-            scriptBuilder.Append($"script.innerHTML = '{contentBuilder}';");
-            scriptBuilder.Append($"document.getElementsByTagName('head')[0].appendChild(script);");
-
-            await _webView.CoreWebView2.ExecuteScriptAsync(scriptBuilder.ToString());
-
+            await _webView.CoreWebView2.ExecuteScriptAsync(_jsFunctions.GetScriptAppender());
         }
 
         private async void OnInjectBootstrapButtonClick(object sender, EventArgs e)

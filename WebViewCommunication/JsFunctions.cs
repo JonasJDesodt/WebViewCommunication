@@ -79,5 +79,29 @@ namespace WebViewCommunication
        
             return builder.ToString();
         }
+
+        public string GetScriptAppender()
+        {
+            var scriptBuilder = new StringBuilder();
+
+            scriptBuilder.Append("const script = document.createElement('script');");
+            scriptBuilder.Append("script.type = 'text/javascript';");
+
+            var contentBuilder = new StringBuilder();
+            //contentBuilder.Append("const bridge = chrome.webview.hostObjects.bridge;");
+            contentBuilder.Append("async function addScript(func){"); // adds the function to add scripts
+            contentBuilder.Append("console.log(func);");
+            contentBuilder.Append("const script = document.createElement(\"script\");");
+            //contentBuilder.Append("script.innerHTML = await bridge[func];");
+            contentBuilder.Append("script.innerHTML = func;");
+
+            contentBuilder.Append("document.getElementsByTagName(\"body\")[0].appendChild(script);");
+            contentBuilder.Append("};");
+
+            scriptBuilder.Append($"script.innerHTML = '{contentBuilder}';");
+            scriptBuilder.Append($"document.getElementsByTagName('head')[0].appendChild(script);");
+
+            return scriptBuilder.ToString();
+        }
     }
 }
