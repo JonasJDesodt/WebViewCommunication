@@ -26,9 +26,8 @@ namespace Demo
 
         public string GetAddDivFunction()
         {
-            //return "function AddDiv(x, y){const div = document.createElement('div'); div.style.position = 'absolute'; div.style.left = x + 'px'; div.style.top = y + 'px'; div.style.width = '250px'; div.style.height = '250px'; div.style.background = 'red'; document.getElementsByTagName('body')[0].appendChild(div); console.log('flag')};";
-            return "function AddDiv(x, y) {console.log('flag');}";
-
+            return "function AddDiv(x, y){const div = document.createElement('div'); div.style.position = 'absolute'; div.style.left = x + 'px'; div.style.top = y + 'px'; div.style.width = '250px'; div.style.height = '250px'; div.style.background = 'red'; document.getElementsByTagName('body')[0].appendChild(div);};";
+            //return "function AddDiv(x, y) {console.log('flag');}";
         }
     }
 

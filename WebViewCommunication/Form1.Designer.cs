@@ -1,6 +1,6 @@
 ﻿namespace WebViewCommunication
 {
-    partial class Browser
+    partial class Form1
     {
         /// <summary>
         /// Required designer variable.
@@ -28,17 +28,10 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.SuspendLayout();
-            // 
-            // Browser
-            // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(16F, 31F);
+            this.components = new System.ComponentModel.Container();
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(973, 603);
-            this.Name = "Browser";
-            this.Text = "Browser";
-            this.ResumeLayout(false);
-
+            this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Text = "Form1";
         }
 
         #endregion

@@ -419,7 +419,6 @@ namespace Demo
 
                 MessageBox.Show("Error. The object is not a CoreWebView2File.");
             }
-
         }
 
         private void AppendEventListenerToScript(Guid id, string action)
@@ -434,6 +433,7 @@ namespace Demo
             html.Append("<!DOCTYPE html>");
             html.Append("<html>");
             html.Append("<head>");
+
             html.Append("</head>");
             html.Append("<body>");
             html.Append("<h1>Startup page</h1>");
